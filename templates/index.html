@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Generator Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f5f7fb; }
+        .sidebar { min-height: 100vh; background: #1f2937; color: white; padding: 20px; }
+        .sidebar a { color: white; text-decoration: none; display: block; padding: 10px; border-radius: 8px; }
+        .sidebar a:hover, .sidebar a.active { background: #374151; }
+        .main-content { padding: 30px; }
+        .chat-box { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+        .chat-message { background: #eef2ff; padding: 16px; border-radius: 8px; margin-bottom: 15px; }
+        textarea { resize: none; }
+        .favorite-btn { float: right; }
+        .title { font-weight: bold; color: #1f2937; }
+    </style>
+</head>
+<body>
+{% macro story_card(item) %}
+<div class="chat-message">
+    <form class="favorite-btn" method="post" action="{{ url_for('change_favorite', story_id=item.id) }}">
+        <input type="hidden" name="next_page" value="{{ page }}">
+        <button class="btn btn-outline-danger btn-sm" type="submit">
+            <i class="{{ 'fa-solid' if item.is_favorite else 'fa-regular' }} fa-heart"></i>
+            {{ 'Unfavorite' if item.is_favorite else 'Favorite' }}
+        </button>
+    </form>
+    <strong>You:</strong>
+    <p class="mb-0">{{ item.prompt }}</p>
+    <hr>
+    <strong>Assistant:</strong>
+    <p class="mb-0" style="white-space: pre-wrap;">{{ item.story }}</p>
+    {% if item.audio_url %}
+    <hr><strong>Listen to this story:</strong>
+    <audio class="d-block mt-2 w-100" controls preload="metadata"><source src="{{ item.audio_url }}" type="audio/wav"></audio>
+    {% endif %}
+    {% if item.video_url %}
+    <hr><strong>Watch this story:</strong>
+    <video class="d-block mt-2 w-100" controls preload="metadata"><source src="{{ item.video_url }}" type="video/mp4"></video>
+    {% endif %}
+    <small class="text-muted d-block mt-3">Created: {{ item.created_at }}</small>
+</div>
+{% endmacro %}
+
+<div class="container-fluid"><div class="row">
+    <aside class="col-md-3 sidebar">
+        <h3>📚 Story AI</h3><hr>
+        <a class="{{ 'active' if page == 'home' }}" href="{{ url_for('home') }}"><i class="fa fa-home"></i> Home</a>
+        <a class="{{ 'active' if page == 'history' }}" href="{{ url_for('history') }}"><i class="fa fa-clock"></i> History</a>
+        <a class="{{ 'active' if page == 'favorites' }}" href="{{ url_for('favorites') }}"><i class="fa fa-heart"></i> Favorite Stories</a>
+        <a class="{{ 'active' if page == 'settings' }}" href="{{ url_for('settings') }}"><i class="fa fa-gear"></i> Settings</a>
+    </aside>
+
+    <main class="col-md-9 main-content">
+        {% if page == 'home' %}
+        <h2 class="title">✨ Story Generator Assistant</h2><hr>
+        <form class="mb-4" method="post">
+            <label class="form-label">Ask Your Story Prompt</label>
+            <textarea class="form-control" name="prompt" rows="4" placeholder="Example: Write a fantasy story about a dragon and a brave princess..." required>{{ prompt|default('') }}</textarea>
+            <button class="btn btn-primary mt-3" type="submit">Generate Story</button>
+        </form>
+        <h4>Recent Stories</h4>
+        {% elif page == 'history' %}
+        <h2 class="title">Story History</h2><hr>
+        {% elif page == 'favorites' %}
+        <h2 class="title">Favorite Stories</h2><hr>
+        {% else %}
+        <h2 class="title">Settings</h2><hr>
+        {% endif %}
+
+        {% if page == 'settings' %}
+        <div class="chat-box">
+            {% if setting_error %}<div class="alert alert-danger">{{ setting_error }}</div>{% endif %}
+            <form method="post">
+                <label class="form-label" for="tts_rate">Narration speed</label>
+                <input class="form-control" id="tts_rate" name="tts_rate" type="number" min="100" max="250" value="{{ tts_rate }}" required>
+                <div class="form-text">100 is slower; 250 is faster. This applies to newly generated stories.</div>
+                <button class="btn btn-primary mt-3" type="submit">Save Settings</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="chat-box">
+            {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
+            {% if audio_error %}<div class="alert alert-warning" role="alert">{{ audio_error }}</div>{% endif %}
+            {% if video_error %}<div class="alert alert-warning" role="alert">{{ video_error }}</div>{% endif %}
+            {% for item in stories %}
+                {{ story_card(item) }}
+            {% else %}
+                <p class="text-muted mb-0">No stories yet. Generate one to start your collection.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </main>
+</div></div>
+</body>
+</html>

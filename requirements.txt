@@ -1,0 +1,6 @@
+flask
+groq 
+python-dotenv
+pyttsx3
+moviepy==1.0.3
+openai

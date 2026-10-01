@@ -1,0 +1,11 @@
+﻿.env
+.env.*
+!.env.example
+env/
+.venv/
+__pycache__/
+*.py[cod]
+data/*.db
+static/audio/
+static/scenes/
+static/video/
